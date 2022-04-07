@@ -1,10 +1,10 @@
 # Gumbo
 CS Capstone II Project
 
-Install these if error occur with imported libraries
-pip install opencv-python
-pip install pytesseract
-pip install numpy
+Install these if error occur with imported libraries<br>
+pip install opencv-python<br>
+pip install pytesseract<br>
+pip install numpy<br>
 
-#This line is for window only
-#https://github.com/UB-Mannheim/tesseract/wiki Download from here
+#This line is for window only<br>
+#https://github.com/UB-Mannheim/tesseract/wiki Download from here<br>
