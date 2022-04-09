@@ -1,14 +1,14 @@
 # Tower Price for easy
 towerPrice = {
 	"dartMonkey" : {
-		"baseCost": 200,
+		"baseCost": 170,
 		"path1" : [120,185,255,1530,12750],
 		"path2" : [85,160,340,6800,38250],
 		"path3" : [75,170,530,1700,19975],
 		"hotkey" : "q",
 		},
 	"boomerangMonkey" : {
-		"baseCost": 225,
+		"baseCost": 275,
 		"path1" : [120,185,255,1530,12750],
 		"path2" : [85,160,340,6800,38250],
 		"path3" : [75,170,530,1700,19975],
@@ -28,7 +28,7 @@ towerPrice = {
 		"path3" : [85,85,350,2720,17000],
 		"hotkey" : "r"
 	},
-	"IceMonkey" : {
+	"iceMonkey" : {
 		"baseCost": 425,
 		"path1" : [85,295,1275,1870,23800],
 		"path2" : [190,295,2465,2550,17000],
@@ -36,7 +36,7 @@ towerPrice = {
 		"hotkey" : "t"
 	},
 	"glueGunner" : {
-		"baseCost": 300,
+		"baseCost": 235,
 		"path1" : [170,255,2125,4250,18700],
 		"path2" : [85,1530,2760,2975,12750],
 		"path3" : [100,340,2890,2550,23800],
@@ -127,21 +127,21 @@ towerPrice = {
 		"hotkey" : "g"
 	},
 	"bananaFarm" : {
-		"baseCost": 945,
+		"baseCost": 1060,
 		"path1" : [425,510,2550,16150,85000],
 		"path2" : [255,680,2975,6375,85000],
 		"path3" : [210,170,2465,12750,51000],
 		"hotkey" : "h"
 	},
 	"spikeFactory" : {
-		"baseCost": 700,
+		"baseCost": 850,
 		"path1" : [680,510,1955,8075,127500],
 		"path2" : [510,680,2125,4250,34000],
 		"path3" : [125,340,1190,2975,25500],
 		"hotkey" : "j"
 	},
 	"monkeyVillage" : {
-		"baseCost": 1000,
+		"baseCost": 1020,
 		"path1" : [340,1275,680,2125,21250],
 		"path2" : [210,1700,6375,17000,34000],
 		"path3" : [425,425,8500,2550,5000],
