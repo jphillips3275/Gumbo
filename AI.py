@@ -111,7 +111,6 @@ def playGame(monkeys, coords):
     money = moneyEasy[0]
     rounds = 0
 
-    tempMoney = money
     if money - towerPrice[monkeys[0]]["baseCost"] > 0:
         money, coords[0] = buyMonkey(monkeys[0],coords[0], money)
     else:
@@ -145,26 +144,25 @@ def createChildren(monkeys, coords, score):
     sorted.append(score[3])
     sorted.append(score[4])
     sorted.sort(reverse=True)
-    parent1 = sorted[0]
-    parent1 = score.index(first)  #parent 1 and 2 should contain the indexes of the top 2 performing monkey arrays
-    parent2 = sorted[1]
-    parent2 = score.index(second)
+    parent1 = score.index(sorted[0])  #parent 1 and 2 should contain the indexes of the top 2 performing monkey arrays
+    parent2 = score.index(sorted[1])
 
     child1 = []
-    cCoords1 = []
+    cCoord1 = []
     child2 = []
-    cCoords2 = []
+    cCoord2 = []
     child3 = []
-    cCoords3 = []
+    cCoord3 = []
     child4 = []
-    cCoords4 = []
+    cCoord4 = []
     child5 = []
-    cCoords5 = []
+    cCoord5 = []
     children = [child1, child2, child3, child4, child5]
     cCoords = [cCoord1, cCoord2, cCoord3, cCoord4, cCoord5]
 
+    x = 0
     while x < len(monkeys):
-        if num%2 == 0:
+        if x%2 == 0:
             children[0][x] = monkeys[parent1][x]
             cCoords[0][x] = coords[parent1][x]
             children[1][x] = monkeys[parent2][x]
@@ -180,13 +178,18 @@ def createChildren(monkeys, coords, score):
             cCoords[2][x] = coords[parent1][x]
             children[3][x] = monkeys[parent2][x]
             cCoords[3][x] = coords[parent2][x]
+            y+=1
         else:
             children[2][x] = monkeys[parent2][x]
             cCoords[2][x] = coords[parent2][x]
             children[3][x] = monkeys[parent1][x]
             cCoords[3][x] = coords[parent1][x]
+            y+=1
+        if y == 4:
+            y = 0
         children[4][x] = monkeys[parent1][x]
         cCoords[4][x] = coords[parent1][x]
+        x+=1
 
     children, cCoords = mutate(children, cCoords)
 
@@ -231,6 +234,94 @@ def mutate(children, cCoords):
             cCoords[4][x] = cReplacements[4][x]
     return children, cCoords
 
+def generateUpgradePath():
+    digit1 = 0
+    digit2 = 0
+    digit3 = 0
+    x = random.randrange(100)
+    if x <= 20:
+        digit1 = 0
+    elif 20 < x <= 50:
+        digit1 = 1
+    elif 50 < x <= 80:
+        digit1 = 2
+    elif 80 < x <= 90:
+        digit1 = 3
+    elif 90 < x <= 97:
+        digit1 = 4
+    elif x > 97:
+        digit1 = 5
+    if digit1 > 2:
+        x = random.randrange(2)
+        y = random.randrange(100)
+        if x == 0:
+            if y <= 33:
+                digit2 = 0
+            elif 33 < y <= 66:
+                digit2 = 1
+            elif y > 66:
+                digit2 = 2
+            digit3 = 0
+        else:
+            digit2 = 0
+            if y <= 33:
+                digit3 = 0
+            elif 33 < y <= 66:
+                digit3 = 1
+            elif y > 66:
+                digit3 = 2
+    else:
+        x = random.randrange(2)
+        y = random.randrange(100)
+        if x == 0:
+            if y <= 20:
+                digit2 = 0
+            elif 20 < y <= 50:
+                digit2 = 1
+            elif 50 < y <= 80:
+                digit2 = 2
+            elif 80 < y <= 90:
+                digit2 = 3
+            elif 90 < y <= 97:
+                digit2 = 4
+            elif y > 97:
+                digit2 = 5
+            digit3 = 0
+        else:
+            if y <= 20:
+                digit3 = 0
+            elif 20 < y <= 50:
+                digit3 = 1
+            elif 50 < y <= 80:
+                digit3 = 2
+            elif 80 < y <= 90:
+                digit3 = 3
+            elif 90 < y <= 97:
+                digit3 = 4
+            elif y > 97:
+                digit3 = 5
+            digit2 = 0
+    if digit1 == 0 and digit2 == 0 and digit3 == 0:
+        return generateUpgradePath()
+    return str(digit1) + str(digit2) + str(digit3)
+
+    
+
+def addUpgrades(monkeys, coords):
+    x = 5
+    usedCoords = []
+    while x < len(monkeys):
+        r = random.randrange(0, 10)
+        if r > 5:
+            monkeys[x] = generateUpgradePath()
+            upgradeTarget = random.randrange(x)
+            while upgradeTarget in usedCoords:
+                upgradeTarget = random.randrange(x)
+            usedCoords.append(upgradeTarget)
+            coords[x] = upgradeTarget
+        x+=1
+    return monkeys, coords
+
 leftBorder = 144
 rightBorder = 1436
 topBorder = 185
@@ -253,6 +344,7 @@ score4 = []
 test5 = []
 coord5 = []
 score5 = []
+#monkeys[what set of instructions we're using][what place in the instruction set we're at]
 monkeys = [test1, test2, test3, test4, test5]
 coords = [coord1, coord2, coord3, coord4, coord5]
 score = [score1, score2, score3, score4, score5]
@@ -266,15 +358,22 @@ while i < 100:
     coords[3].append(randomCoord())
     coords[4].append(randomCoord())
     i+=1
-
-pyautogui.click(500,500)
-while 1:
-    p = 0
-    while p <= 4:
-        score[p] = playGame(monkeys[p], coords[p])
-        pyautogui.click(853,817)
-        time.sleep(.3)
-        pyautogui.click(1146, 728)
-        p+=1
-    print(score)
-    monkeys, coords = createChildren(monkeys, coords, score)
+i = 0
+while i < 5:
+    monkeys[i], coords[i] = addUpgrades(monkeys[i], coords[i])
+    i+=1
+a = 0
+while a < 99:
+    print(monkeys[0][a], coords[0][a])
+    a+=1
+# pyautogui.click(500,500)
+# while 1:
+#     p = 0
+#     while p <= 4:
+#         score[p] = playGame(monkeys[p], coords[p])
+#         pyautogui.click(853,817)
+#         time.sleep(.3)
+#         pyautogui.click(1146, 728)
+#         p+=1
+#     print(score)
+#     monkeys, coords = createChildren(monkeys, coords, score)
