@@ -15,7 +15,7 @@ def randomCoord():
 def randomTowers(monkeys):
     towers = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
     "heliPilot", "mortarMonkey", "wizardMonkey", "superMonkey", "ninjaMonkey", "alchemist", "druid", "spikeFactory", "engineerMonkey"]
-    towersLimited = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
+    towersLimited = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "sniperMonkey",
     "mortarMonkey", "wizardMonkey", "ninjaMonkey", "alchemist", "druid", "engineerMonkey"]
 
     i=1
@@ -32,15 +32,15 @@ def randomTowers(monkeys):
         monkeys[4].append(towers[x])
         i+=1
     x = random.randrange(0, len(towersLimited)) #some small bugs when you can't buy a tower round 1 so I just limited the towers possible
-    monkeys[0][0] = towers[x]                   #makes it more likely to complete too so whatever
+    monkeys[0][0] = towersLimited[x]                #makes it more likely to complete too so whatever
     x = random.randrange(0, len(towersLimited))
-    monkeys[1][0] = towers[x]
+    monkeys[1][0] = towersLimited[x]  
     x = random.randrange(0, len(towersLimited))
-    monkeys[2][0] = towers[x]
+    monkeys[2][0] = towersLimited[x]  
     x = random.randrange(0, len(towersLimited))
-    monkeys[3][0] = towers[x]
+    monkeys[3][0] = towersLimited[x]  
     x = random.randrange(0, len(towersLimited))
-    monkeys[4][0] = towers[x]
+    monkeys[4][0] = towersLimited[x]  
     return monkeys
 
 def checkPlaceable():
@@ -77,7 +77,6 @@ def startRound(started):
     print("round ended")
 
 def buyMonkey(monkeys, coord, money):
-    x = 0
     money = money - towerPrice[monkeys]["baseCost"]
     while 1:
         print(coord)
@@ -92,6 +91,52 @@ def buyMonkey(monkeys, coord, money):
             return money, coord
         coord = randomCoord()
 
+def getUpgradeCost(path, targetIndex, monkeysList, coordsList):
+    target = monkeysList[targetIndex]
+    location = coordsList[targetIndex]
+
+    cost = 0
+    x = 0
+    while x < int(path[0]):
+        cost = cost + towerPrice[target]["path1"][x]
+        x+=1
+    x = 0
+    while x < int(path[1]):
+        cost = cost + towerPrice[target]["path2"][x]
+        x+=1
+    x = 0
+    while x < int(path[2]):
+        cost = cost + towerPrice[target]["path3"][x]
+        x+=1
+    x = 0
+    print("buy a", path, "upgrade on a", target, "at location", location, "for price", cost)
+    return cost
+
+def buyUpgrade(path, targetIndex, monkeysList, coordsList):
+    target = monkeysList[targetIndex]
+    location = coordsList[targetIndex]
+    pyautogui.click(location)
+    x = 0
+    while x < int(path[0]):
+        keyboard.press(",")
+        keyboard.release(",")
+        time.sleep(.3)
+        x+=1
+    x = 0
+    while x < int(path[1]):
+        keyboard.press(".")
+        keyboard.release(".")
+        time.sleep(.3)
+        x+=1
+    x = 0
+    while x < int(path[2]):
+        keyboard.press("/")
+        keyboard.release("/")
+        time.sleep(.3)
+        x+=1
+    x = 0
+    pyautogui.click(1420, 40)
+
 def checkDeath():
     im = pyautogui.screenshot()
     x = pyautogui.position(564, 456)
@@ -102,6 +147,7 @@ def checkWin():
     im = pyautogui.screenshot()
     x = pyautogui.position(687, 217)
     px = im.getpixel(x)
+    print("checking win")
     if px == (241, 60, 11):
         print("win!")
         quit()
@@ -122,11 +168,32 @@ def playGame(monkeys, coords):
     coordPlace = 1
     while rounds < 40:
         checkWin()
-        while money-towerPrice[monkeys[coordPlace]]["baseCost"] > 0:
-            money, coords[coordPlace] = buyMonkey(monkeys[coordPlace],coords[coordPlace], money)
-            coordPlace+=1
-        else:
-            print(towerPrice[monkeys[coordPlace]]["baseCost"], "too expensive")
+        try:
+            while money-towerPrice[monkeys[coordPlace]]["baseCost"] > 0:
+                money, coords[coordPlace] = buyMonkey(monkeys[coordPlace],coords[coordPlace], money)
+                coordPlace+=1
+            else:
+                print(monkeys[coordPlace], "too expensive, cost is:", towerPrice[monkeys[coordPlace]]["baseCost"], "money is:", money,)
+        except:
+            try:
+                if money-getUpgradeCost(monkeys[coordPlace], coords[coordPlace], monkeys, coords) > 0:
+                    print("buying upgrade")
+                    buyUpgrade(monkeys[coordPlace], coords[coordPlace], monkeys, coords)
+                    coordPlace+=1
+                else:
+                    print("upgrade too expensive")
+            except:
+                print("upgrade failed, upgrade attempted to be placed on an upgrade instruction")
+                while len(monkeys[coords[coordPlace]]) == 3:
+                    print(monkeys[coords[coordPlace]], coords[coordPlace])
+                    print(len(monkeys[coordPlace]))
+                    coords[coordPlace] = coords[coordPlace]-1
+                if money-getUpgradeCost(monkeys[coordPlace], coords[coordPlace], monkeys, coords) > 0:
+                    print("buying upgrade")
+                    buyUpgrade(monkeys[coordPlace], coords[coordPlace], monkeys, coords)
+                    coordPlace+=1
+                else:
+                    print("upgrade too expensive")
         startRound(True)
         rounds+=1
         money = money + moneyEasy[rounds]
@@ -238,7 +305,7 @@ def generateUpgradePath():
     digit1 = 0
     digit2 = 0
     digit3 = 0
-    x = random.randrange(100)
+    x = random.randrange(97)
     if x <= 20:
         digit1 = 0
     elif 20 < x <= 50:
@@ -272,7 +339,7 @@ def generateUpgradePath():
                 digit3 = 2
     else:
         x = random.randrange(2)
-        y = random.randrange(100)
+        y = random.randrange(97)
         if x == 0:
             if y <= 20:
                 digit2 = 0
@@ -363,17 +430,17 @@ while i < 5:
     monkeys[i], coords[i] = addUpgrades(monkeys[i], coords[i])
     i+=1
 a = 0
-while a < 99:
+while a < 5:
     print(monkeys[0][a], coords[0][a])
     a+=1
-# pyautogui.click(500,500)
-# while 1:
-#     p = 0
-#     while p <= 4:
-#         score[p] = playGame(monkeys[p], coords[p])
-#         pyautogui.click(853,817)
-#         time.sleep(.3)
-#         pyautogui.click(1146, 728)
-#         p+=1
-#     print(score)
-#     monkeys, coords = createChildren(monkeys, coords, score)
+pyautogui.click(500,500)
+while 1:
+    p = 0
+    while p <= 4:
+        score[p] = playGame(monkeys[p], coords[p])
+        pyautogui.click(853,817)
+        time.sleep(.3)
+        pyautogui.click(1146, 728)
+        p+=1
+    print(score)
+    monkeys, coords = createChildren(monkeys, coords, score)
