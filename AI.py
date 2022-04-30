@@ -113,7 +113,6 @@ def getUpgradeCost(path, targetIndex, monkeysList, coordsList):
     return cost
 
 def buyUpgrade(path, targetIndex, monkeysList, coordsList):
-    target = monkeysList[targetIndex]
     location = coordsList[targetIndex]
     pyautogui.click(location)
     x = 0
@@ -199,7 +198,6 @@ def playGame(monkeys, coords):
         money = money + moneyEasy[rounds]
         if checkDeath() == True:
             return rounds
-            break
 
     print("round = ", rounds, "money = ", money)
 
@@ -228,77 +226,62 @@ def createChildren(monkeys, coords, score):
     cCoords = [cCoord1, cCoord2, cCoord3, cCoord4, cCoord5]
 
     x = 0
-    while x < len(monkeys):
+    y = 0
+    while x < len(monkeys[0]):
         if x%2 == 0:
-            children[0][x] = monkeys[parent1][x]
-            cCoords[0][x] = coords[parent1][x]
-            children[1][x] = monkeys[parent2][x]
-            cCoords[1][x] = coords[parent2][x]
+            children[0].append(monkeys[parent1][x])
+            cCoords[0].append(coords[parent1][x])
+            children[1].append(monkeys[parent2][x])
+            cCoords[1].append(coords[parent2][x])
         else:
-            children[0][x] = monkeys[parent2][x]
-            cCoords[0][x] = coords[parent2][x]
-            children[1][x] = monkeys[parent1][x]
-            cCoords[1][x] = coords[parent1][x]
-        y = 0
+            children[0].append(monkeys[parent2][x])
+            cCoords[0].append(coords[parent2][x])
+            children[1].append(monkeys[parent1][x])
+            cCoords[1].append(coords[parent1][x])
         if y < 2:
-            children[2][x] = monkeys[parent1][x]
-            cCoords[2][x] = coords[parent1][x]
-            children[3][x] = monkeys[parent2][x]
-            cCoords[3][x] = coords[parent2][x]
+            children[2].append(monkeys[parent1][x])
+            cCoords[2].append(coords[parent1][x])
+            children[3].append(monkeys[parent2][x])
+            cCoords[3].append(coords[parent2][x])
             y+=1
         else:
-            children[2][x] = monkeys[parent2][x]
-            cCoords[2][x] = coords[parent2][x]
-            children[3][x] = monkeys[parent1][x]
-            cCoords[3][x] = coords[parent1][x]
+            children[2].append(monkeys[parent2][x])
+            cCoords[2].append(coords[parent2][x])
+            children[3].append(monkeys[parent1][x])
+            cCoords[3].append(coords[parent1][x])
             y+=1
         if y == 4:
             y = 0
-        children[4][x] = monkeys[parent1][x]
-        cCoords[4][x] = coords[parent1][x]
+        children[4].append(monkeys[parent1][x])
+        cCoords[4].append(coords[parent1][x])
         x+=1
 
-    children, cCoords = mutate(children, cCoords)
-
+    i = 0
+    while i < len(monkeys):
+        children[i], cCoords[i] = mutate(children[i], cCoords[i])
+        i+=1
     return children, cCoords
 
 def mutate(children, cCoords):
-    replace1 = []
-    cReplace1 = []
-    replace2 = []
-    cReplace2 = []
-    replace3 = []
-    cReplace3 = []
-    replace4 = []
-    cReplace4 = []
-    replace5 = []
-    cReplace5 = []
-    replacements = [replace1, replace2, replace3, replace4, replace5]
-    cReplacements = [cReplace1, cReplace2, cReplace3, cReplace4, cReplace5]
-    replacements = randomTowers(replacements)
-    i=0
+    #I coded the random towers in a stupid way and I don't want to change it now so this is what we've got
+    towers = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
+    "heliPilot", "mortarMonkey", "wizardMonkey", "superMonkey", "ninjaMonkey", "alchemist", "druid", "spikeFactory", "engineerMonkey"]
+    newTowers = []
+    newCoords = []
+    i = 0
     while i < 100:
-        cReplacements[0].append(randomCoord())
-        cReplacements[1].append(randomCoord())
-        cReplacements[2].append(randomCoord())
-        cReplacements[3].append(randomCoord())
-        cReplacements[4].append(randomCoord())
+        newTowers.append(towers[random.randrange(len(towers))])
+        newCoords.append(randomCoord())
         i+=1
+    newTowers, newCoords = addUpgrades(newTowers, newCoords)
 
-    x = 0
-    while x < len(children):
-        y = random.randrange(1, 10)
-        if y == 10:
-            children[0][x] = replacements[0][x]
-            cCoords[0][x] = cReplacements[0][x]
-            children[1][x] = replacements[1][x]
-            cCoords[1][x] = cReplacements[1][x]
-            children[2][x] = replacements[2][x]
-            cCoords[2][x] = cReplacements[2][x]
-            children[3][x] = replacements[3][x]
-            cCoords[3][x] = cReplacements[3][x]
-            children[4][x] = replacements[4][x]
-            cCoords[4][x] = cReplacements[4][x]
+    i = 0
+    while i < len(children):
+        rng = random.randrange(10)
+        if rng > 7: #change this value to effect how often mutations happen
+            children[i] = newTowers[i]
+            cCoords[i] = newCoords[i]
+        i+=1
     return children, cCoords
 
 def generateUpgradePath():
@@ -398,23 +381,24 @@ bottomBorder = 992
 #monkey arrays, this is stupid I should just make 2 2d arrays
 test1 = []
 coord1 = []
-score1 = []
+#score1 = []
 test2 = []
 coord2 = []
-score2 = []
+#score2 = []
 test3 = []
 coord3 = []
-score3 = []
+#score3 = []
 test4 = []
 coord4 = []
-score4 = []
+#score4 = []
 test5 = []
 coord5 = []
-score5 = []
+#score5 = []
 #monkeys[what set of instructions we're using][what place in the instruction set we're at]
 monkeys = [test1, test2, test3, test4, test5]
 coords = [coord1, coord2, coord3, coord4, coord5]
-score = [score1, score2, score3, score4, score5]
+#score = [score1, score2, score3, score4, score5]
+score = [0, 0, 0, 0, 0]
 
 monkeys = randomTowers(monkeys)
 i=0
@@ -433,6 +417,8 @@ a = 0
 while a < 5:
     print(monkeys[0][a], coords[0][a])
     a+=1
+#uncomment for single screen computers
+#time.sleep(5)
 pyautogui.click(500,500)
 while 1:
     p = 0
