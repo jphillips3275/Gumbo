@@ -1,8 +1,14 @@
 import pyautogui
 import random
 import time
-from pynput.keyboard import Key, Controller
-from towerPrice import towerPrice
+from pynput.keyboard import Controller
+difficulty = 1 #0 = easy, 1 = normal, 2 = hard
+if difficulty == 0:
+    from towerPrice import towerPrice
+elif difficulty == 1:
+    from towerPriceNormal import towerPrice
+else:
+    from towerPriceHard import towerPrice
 
 pyautogui.FAILSAFE = False
 keyboard = Controller()
@@ -15,8 +21,8 @@ def randomCoord():
 def randomTowers(monkeys):
     towers = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
     "heliPilot", "mortarMonkey", "wizardMonkey", "superMonkey", "ninjaMonkey", "alchemist", "druid", "spikeFactory", "engineerMonkey"]
-    towersLimited = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "sniperMonkey",
-    "mortarMonkey", "wizardMonkey", "ninjaMonkey", "alchemist", "druid", "engineerMonkey"]
+    towersLimited = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "sniperMonkey", "wizardMonkey", "ninjaMonkey",
+     "alchemist", "druid", "engineerMonkey"]
 
     i=1
     while i < 100:  #this is stupid but for some reason doing 2 loops isn't working for me and I hate it
@@ -30,6 +36,8 @@ def randomTowers(monkeys):
         monkeys[3].append(towers[x])
         x = random.randrange(0, len(towers))
         monkeys[4].append(towers[x])
+        x = random.randrange(0, len(towers))
+        monkeys[5].append(towers[x])
         i+=1
     x = random.randrange(0, len(towersLimited)) #some small bugs when you can't buy a tower round 1 so I just limited the towers possible
     monkeys[0][0] = towersLimited[x]                #makes it more likely to complete too so whatever
@@ -40,7 +48,9 @@ def randomTowers(monkeys):
     x = random.randrange(0, len(towersLimited))
     monkeys[3][0] = towersLimited[x]  
     x = random.randrange(0, len(towersLimited))
-    monkeys[4][0] = towersLimited[x]  
+    monkeys[4][0] = towersLimited[x] 
+    x = random.randrange(0, len(towersLimited))
+    monkeys[5][0] = towersLimited[x] 
     return monkeys
 
 def checkPlaceable():
@@ -78,7 +88,8 @@ def startRound(started):
 
 def buyMonkey(monkeys, coord, money):
     money = money - towerPrice[monkeys]["baseCost"]
-    while 1:
+    i = 0
+    while i < 50:
         print(coord)
         pyautogui.moveTo(1800, 100)
         key = towerPrice[monkeys]["hotkey"]
@@ -87,9 +98,12 @@ def buyMonkey(monkeys, coord, money):
         keyboard.release(key)
         time.sleep(.3)
         pyautogui.click(coord)
+        print("Monkey:", monkeys)
+        time.sleep(.3)
         if checkPlaceable() == True:
             return money, coord
         coord = randomCoord()
+        i+=1
 
 def getUpgradeCost(path, targetIndex, monkeysList, coordsList):
     target = monkeysList[targetIndex]
@@ -151,9 +165,13 @@ def checkWin():
         print("win!")
         quit()
 
+def getMoneyOCR():
+    money = 0
+    return money
+
 def playGame(monkeys, coords):
-    moneyEasy = [650, 121, 137, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521]
-    money = moneyEasy[0]
+    income = [650, 121, 137, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
+    money = income[0]
     rounds = 0
 
     if money - towerPrice[monkeys[0]]["baseCost"] > 0:
@@ -162,11 +180,18 @@ def playGame(monkeys, coords):
         print(towerPrice[monkeys[0]]["baseCost"],"too expensive")
     startRound(False)
     rounds+=1
-    money = money + moneyEasy[1]
+    #can remove this once OCR is implemented?
+    money = money + income[1]
 
     coordPlace = 1
-    while rounds < 40:
+    while rounds < 100:
         checkWin()
+
+        #I think we just need to do the OCR stuff once per round, first round doesn't matter since
+        #starting income is set and the functions we already have do it accurately, so we should just
+        #need to use OCR to set the money here and then we're good.
+        #money = getMoneyOCR()
+
         try:
             while money-towerPrice[monkeys[coordPlace]]["baseCost"] > 0:
                 money, coords[coordPlace] = buyMonkey(monkeys[coordPlace],coords[coordPlace], money)
@@ -195,7 +220,8 @@ def playGame(monkeys, coords):
                     print("upgrade too expensive")
         startRound(True)
         rounds+=1
-        money = money + moneyEasy[rounds]
+        #can remove this once OCR is implemented?
+        money = money + income[rounds]
         if checkDeath() == True:
             return rounds
 
@@ -222,8 +248,10 @@ def createChildren(monkeys, coords, score):
     cCoord4 = []
     child5 = []
     cCoord5 = []
-    children = [child1, child2, child3, child4, child5]
-    cCoords = [cCoord1, cCoord2, cCoord3, cCoord4, cCoord5]
+    child6 = []
+    cCoord6 = []
+    children = [child1, child2, child3, child4, child5, child6]
+    cCoords = [cCoord1, cCoord2, cCoord3, cCoord4, cCoord5, cCoord6]
 
     x = 0
     y = 0
@@ -254,6 +282,11 @@ def createChildren(monkeys, coords, score):
             y = 0
         children[4].append(monkeys[parent1][x])
         cCoords[4].append(coords[parent1][x])
+
+        towers = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
+    "heliPilot", "mortarMonkey", "wizardMonkey", "superMonkey", "ninjaMonkey", "alchemist", "druid", "spikeFactory", "engineerMonkey"]
+        children[5].append(towers[random.randrange(len(towers))])
+        cCoords[5].append(randomCoord())
         x+=1
 
     i = 0
@@ -361,8 +394,8 @@ def addUpgrades(monkeys, coords):
     x = 5
     usedCoords = []
     while x < len(monkeys):
-        r = random.randrange(0, 10)
-        if r > 5:
+        r = random.randrange(10)
+        if r > 5: #change this to change the rate of upgrades
             monkeys[x] = generateUpgradePath()
             upgradeTarget = random.randrange(x)
             while upgradeTarget in usedCoords:
@@ -394,11 +427,13 @@ coord4 = []
 test5 = []
 coord5 = []
 #score5 = []
+test6 = []
+coord6 = []
 #monkeys[what set of instructions we're using][what place in the instruction set we're at]
-monkeys = [test1, test2, test3, test4, test5]
-coords = [coord1, coord2, coord3, coord4, coord5]
+monkeys = [test1, test2, test3, test4, test5, test6]
+coords = [coord1, coord2, coord3, coord4, coord5, coord6]
 #score = [score1, score2, score3, score4, score5]
-score = [0, 0, 0, 0, 0]
+score = [0, 0, 0, 0, 0, 0]
 
 monkeys = randomTowers(monkeys)
 i=0
@@ -408,21 +443,23 @@ while i < 100:
     coords[2].append(randomCoord())
     coords[3].append(randomCoord())
     coords[4].append(randomCoord())
+    coords[5].append(randomCoord())
     i+=1
 i = 0
-while i < 5:
+while i < 6:
     monkeys[i], coords[i] = addUpgrades(monkeys[i], coords[i])
     i+=1
 a = 0
 while a < 5:
     print(monkeys[0][a], coords[0][a])
     a+=1
-#uncomment for single screen computers
+#uncomment sleep for single screen computers
 #time.sleep(5)
 pyautogui.click(500,500)
 while 1:
     p = 0
-    while p <= 4:
+    while p <= 5:
+        print("new testing round:",p)
         score[p] = playGame(monkeys[p], coords[p])
         pyautogui.click(853,817)
         time.sleep(.3)
