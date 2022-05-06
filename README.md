@@ -1,7 +1,7 @@
 # Gumbo
 CS Capstone II Project
 
-**About
+**About**
 An AI that plays Bloons tower defense 6 (BTD6) by placing down towers.
 
 
