@@ -2,6 +2,15 @@ import pyautogui
 import random
 import time
 from pynput.keyboard import Controller
+from BasicTask import *
+import cv2
+
+incomex = 211
+incomey = 77
+incomex2 = 310
+incomey2 = 135
+imgIncome = cv2.imread('')
+
 chanceMutation = 5
 chanceUpgrade = 5
 difficulty = 2 #0 = easy, 1 = normal, 2 = hard
@@ -183,7 +192,7 @@ def playGame(monkeys, coords, income):
     startRound(False)
     rounds+=1
     #can remove this once OCR is implemented?
-    money = money + income[1]
+    # money = money + income[1]
 
     coordPlace = 1
     while rounds < 100:
@@ -195,8 +204,8 @@ def playGame(monkeys, coords, income):
         #I think we just need to do the OCR stuff once per round, first round doesn't matter since
         #starting income is set and the functions we already have do it accurately, so we should just
         #need to use OCR to set the money here and then we're good.
-        #money = getMoneyOCR()
-
+        money = getMoneyOCR(incomex,incomey,incomex2,incomey2,imgIncome)
+        print("TOTAL MONEY IS: " + str(money))
         try:
             while money-towerPrice[monkeys[coordPlace]]["baseCost"] > 0:
                 money, coords[coordPlace] = buyMonkey(monkeys[coordPlace],coords[coordPlace], money)
