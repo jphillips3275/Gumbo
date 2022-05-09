@@ -322,7 +322,7 @@ def createChildren(monkeys, coords, score):
 
     i = 0
     while i < 6:
-        cCoords[i] = verifyChild(children, cCoords)
+        cCoords[i] = verifyChild(children[i], cCoords[i])
         i+=1
     return children, cCoords
 
@@ -349,7 +349,7 @@ def mutate(children, cCoords):
     return children, cCoords
 
 def verifyChild(monkeys, coords):   #likeliest place for bugs
-    upgradeIndexes = [] #the inexes of every upgrade we do
+    upgradeIndexes = [] #the indexes of every upgrade we do
     usedIndexes = [] #the indexes of every location that an upgrade points to
     usableIndexes = [] #the indexes that are still usable
     x = 0
@@ -359,23 +359,21 @@ def verifyChild(monkeys, coords):   #likeliest place for bugs
         x+=1
     x = 0
     while x < len(coords):
-        if coords[x] not in usedIndexes and isinstance(coords[x], int):
+        if coords[x] not in usedIndexes:
             usedIndexes.append(coords[x])
         x+=1
     x = 0
     while x < len(monkeys):
-        if x not in usedIndexes and len(monkeys[x]) != 3:
+        if x not in usedIndexes and x not in upgradeIndexes:
             usableIndexes.append(x)
         x+=1
-    print(usableIndexes)
 
     x = 0
     while x < len(upgradeIndexes):
         if len(monkeys[coords[upgradeIndexes[x]]]) == 3:
-            print("fuck", monkeys[coords[upgradeIndexes[x]]], upgradeIndexes[x])
+            print("errors", monkeys[coords[upgradeIndexes[x]]], upgradeIndexes[x])
             coords[upgradeIndexes[x]] = usableIndexes.pop(0)
-        x+=1     
-    print(coords)
+        x+=1
 
     return(coords)
 
@@ -659,37 +657,39 @@ a = 0
 #uncomment sleep for single screen computers
 #time.sleep(5)
 
-score = [17, 26, 34, 8, 13, 37, 0]
-monkeys, coords = createChildren(monkeys, coords, score)
-# coords = verifyChild(monkeys[0], coords[0])
+# score = [17, 26, 34, 8, 13, 37, 1]
+# monkeys, coords = createChildren(monkeys, coords, score)
+# coords[0] = verifyChild(monkeys[0], coords[0])
+# print("\n middle")
+# coords[0] = verifyChild(monkeys[0], coords[0])
 
-# pyautogui.click(500,500)
-# numTrials = 1
-# file = open("scores.txt", "w")
-# for scores in score:
-#     file.write(str(scores))
-#     file.write(" ")
-# file.write("\n")
-# file.close()
-# while 1:
-#     p = 0
-#     while p <= 6:
-#         print("new testing round:",p)
-#         print("number of trials:", numTrials)
-#         if difficulty == 2:
-#             score[p] = playGame(monkeys[p], coords[p], incomeHard)
-#         else:
-#             score[p] = playGame(monkeys[p], coords[p], income)
-#         pyautogui.click(853,817)
-#         time.sleep(.3)
-#         pyautogui.click(1146, 728)
-#         p+=1
-#         numTrials+=1
-#     print(score)
-#     file = open("scores.txt", "a")
-#     for scores in score:
-#         file.write(str(scores))
-#         file.write(" ")
-#     file.write("\n")
-#     file.close()
-#     monkeys, coords = createChildren(monkeys, coords, score)
+pyautogui.click(500,500)
+numTrials = 1
+file = open("scores.txt", "w")
+for scores in score:
+    file.write(str(scores))
+    file.write(" ")
+file.write("\n")
+file.close()
+while 1:
+    p = 0
+    while p <= 6:
+        print("new testing round:",p)
+        print("number of trials:", numTrials)
+        if difficulty == 2:
+            score[p] = playGame(monkeys[p], coords[p], incomeHard)
+        else:
+            score[p] = playGame(monkeys[p], coords[p], income)
+        pyautogui.click(853,817)
+        time.sleep(.3)
+        pyautogui.click(1146, 728)
+        p+=1
+        numTrials+=1
+    print(score)
+    file = open("scores.txt", "a")
+    for scores in score:
+        file.write(str(scores))
+        file.write(" ")
+    file.write("\n")
+    file.close()
+    monkeys, coords = createChildren(monkeys, coords, score)
