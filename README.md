@@ -1,6 +1,6 @@
 # Gumbo: CS Capstone II Project
 ### Project Overview: 
-The purpose of this project is to use artificial intelligence to create a bot that can outperform the average human player in the strategic game, Bloons Tower Defense 6. Bloons Tower Defense is a strategic game that consists of a player buying and organizing defensive towers that fire upon a set deployment of enemies (balloons). The AI pulls health and income data from the game by taking a screenshot of the game each round and using OCR to convert that into usable data. The AI takes control of the mouse and hotkeys to play the game and uses the genetic algorithm to determine the best location to place towers and the order it should buy/upgrade towers.
+The purpose of this project is to use artificial intelligence to create a bot in Python that can outperform the average human player in the strategic game, Bloons Tower Defense 6. Bloons Tower Defense is a strategic game that consists of a player buying and organizing defensive towers that fire upon a set deployment of enemies (balloons). The AI pulls health and income data from the game by taking a screenshot of the game each round and using OCR to convert that into usable data. The AI takes control of the mouse and hotkeys to play the game and uses the genetic algorithm to determine the best location to place towers and the order it should buy/upgrade towers.
 
 ### Team Members
 - Jackson Phillips (AI)
