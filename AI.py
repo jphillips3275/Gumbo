@@ -1,7 +1,11 @@
 import pyautogui
 import random
 import time
+import cv2
+import pytesseract
 from pynput.keyboard import Controller
+from BasicTask import *
+
 chanceMutation = 5
 chanceUpgrade = 5
 difficulty = 2 #0 = easy, 1 = normal, 2 = hard
@@ -173,7 +177,45 @@ def checkWin():
         quit()
 
 def getMoneyOCR():
-    money = 0
+    try:
+        moneyLocation = pyautogui.locateOnScreen('money2.png', region=(0,0,500,500), confidence=.7)
+        print(moneyLocation)
+
+        #take screenshot of income and save as png for testing purposes; CHANGE screenshot dimensions if png doesn't show income properly
+        img = pyautogui.screenshot(region=(moneyLocation.left + moneyLocation.width, moneyLocation.top, moneyLocation.width, moneyLocation.height))
+        #img = pyautogui.screenshot(region=(moneyLocation.left+moneyLocation.width*1.3,moneyLocation.top*1.2,moneyLocation.width*1.3, moneyLocation.height*0.9))
+        img.save('income.png')
+
+        image = cv2.imread('income.png')
+
+        #use readIncome function in BasicTask to get money
+        money = readIncome(0,0,0,0,image)
+
+        #preprocess image again if readIncome output is empty
+        if not money or len(money) == 0:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gray, (3,3), 0)
+            thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+
+            # Morph open to remove noise
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+            opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
+
+            # Perform text extraction
+            data = pytesseract.image_to_string(opening, lang='eng', config='--psm 6')
+            print("altInc:", data)
+            money = data
+
+        #return money as int
+        return int(''.join(c for c in money if c.isdigit()))
+    except Exception as e:
+        money = 0
+        print(e)
+    return money
+
+
+
+
     return money
 
 def playGame(monkeys, coords, income):
@@ -186,6 +228,7 @@ def playGame(monkeys, coords, income):
         print(towerPrice[monkeys[0]]["baseCost"],"too expensive")
     startRound(False)
     rounds+=1
+
     #can remove this once OCR is implemented?
     money = money + income[1]
 
@@ -235,8 +278,14 @@ def playGame(monkeys, coords, income):
             return rounds
         startRound(True)
         rounds+=1
-        #can remove this once OCR is implemented?
-        money = money + income[rounds]
+
+        #get income using OCR, if doesn't work then use income array
+        moneyOCR = getMoneyOCR()
+        if moneyOCR == 0:
+            money = money + income[rounds]
+        else:
+            money = moneyOCR
+
         if checkDeath() == True:
             return rounds
 
