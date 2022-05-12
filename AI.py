@@ -213,11 +213,6 @@ def getMoneyOCR():
         print(e)
     return money
 
-
-
-
-    return money
-
 def playGame(monkeys, coords, income):
     money = income[0]
     rounds = 0
