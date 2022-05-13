@@ -1,10 +1,10 @@
 import pyautogui
 import random
 import time
+import cv2
+import pytesseract
 from pynput.keyboard import Controller
 from BasicTask import *
-import cv2
-
 incomex = 211
 incomey = 77
 incomex2 = 310
@@ -50,6 +50,8 @@ def randomTowers(monkeys):
         monkeys[4].append(towers[x])
         x = random.randrange(0, len(towers))
         monkeys[5].append(towers[x])
+        x = random.randrange(0, len(towers))
+        monkeys[6].append(towers[x])
         i+=1
     x = random.randrange(0, len(towersLimited)) #some small bugs when you can't buy a tower round 1 so I just limited the towers possible
     monkeys[0][0] = towersLimited[x]                #makes it more likely to complete too so whatever
@@ -63,6 +65,8 @@ def randomTowers(monkeys):
     monkeys[4][0] = towersLimited[x] 
     x = random.randrange(0, len(towersLimited))
     monkeys[5][0] = towersLimited[x] 
+    x = random.randrange(0, len(towersLimited))
+    monkeys[6][0] = towersLimited[x] 
     return monkeys
 
 def checkPlaceable():
@@ -178,7 +182,40 @@ def checkWin():
         quit()
 
 def getMoneyOCR():
-    money = 0
+    try:
+        moneyLocation = pyautogui.locateOnScreen('money2.png', region=(0,0,500,500), confidence=.7)
+        print(moneyLocation)
+
+        #take screenshot of income and save as png for testing purposes; CHANGE screenshot dimensions if png doesn't show income properly
+        img = pyautogui.screenshot(region=(moneyLocation.left + moneyLocation.width, moneyLocation.top, moneyLocation.width, moneyLocation.height))
+        #img = pyautogui.screenshot(region=(moneyLocation.left+moneyLocation.width*1.3,moneyLocation.top*1.2,moneyLocation.width*1.3, moneyLocation.height*0.9))
+        img.save('income.png')
+
+        image = cv2.imread('income.png')
+
+        #use readIncome function in BasicTask to get money
+        money = readIncome(0,0,0,0,image)
+
+        #preprocess image again if readIncome output is empty
+        if not money or len(money) == 0:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gray, (3,3), 0)
+            thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+
+            # Morph open to remove noise
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+            opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
+
+            # Perform text extraction
+            data = pytesseract.image_to_string(opening, lang='eng', config='--psm 6')
+            print("altInc:", data)
+            money = data
+
+        #return money as int
+        return int(''.join(c for c in money if c.isdigit()))
+    except Exception as e:
+        money = 0
+        print(e)
     return money
 
 def playGame(monkeys, coords, income):
@@ -191,6 +228,7 @@ def playGame(monkeys, coords, income):
         print(towerPrice[monkeys[0]]["baseCost"],"too expensive")
     startRound(False)
     rounds+=1
+
     #can remove this once OCR is implemented?
     # money = money + income[1]
 
@@ -240,8 +278,14 @@ def playGame(monkeys, coords, income):
             return rounds
         startRound(True)
         rounds+=1
-        #can remove this once OCR is implemented?
-        money = money + income[rounds]
+
+        #get income using OCR, if doesn't work then use income array
+        moneyOCR = getMoneyOCR()
+        if moneyOCR == 0:
+            money = money + income[rounds]
+        else:
+            money = moneyOCR
+
         if checkDeath() == True:
             return rounds
 
@@ -255,9 +299,11 @@ def createChildren(monkeys, coords, score):
     sorted.append(score[3])
     sorted.append(score[4])
     sorted.append(score[5])
+    sorted.append(score[6])
     sorted.sort(reverse=True)
     parent1 = score.index(sorted[0])  #parent 1 and 2 should contain the indexes of the top 2 performing monkey arrays
     parent2 = score.index(sorted[1])
+    print(score, "parent1 index:", parent1, "parent2 index:", parent2)
 
     child1 = []
     cCoord1 = []
@@ -271,8 +317,10 @@ def createChildren(monkeys, coords, score):
     cCoord5 = []
     child6 = []
     cCoord6 = []
-    children = [child1, child2, child3, child4, child5, child6]
-    cCoords = [cCoord1, cCoord2, cCoord3, cCoord4, cCoord5, cCoord6]
+    child7 = []
+    cCoord7 = []
+    children = [child1, child2, child3, child4, child5, child6, child7]
+    cCoords = [cCoord1, cCoord2, cCoord3, cCoord4, cCoord5, cCoord6, cCoord7]
 
     x = 0
     y = 0
@@ -301,28 +349,30 @@ def createChildren(monkeys, coords, score):
             y+=1
         if y == 4:
             y = 0
-        children[4] = monkeys[parent1]
-        cCoords[4] = coords[parent1]
+        children[5].append(monkeys[parent1][x])
+        cCoords[5].append(coords[parent1][x])
+        children[6].append(monkeys[parent1][x])
+        cCoords[6].append(coords[parent1][x])
 
-    # fully randomized child: good for early game, sucks for late game. Scrapped
-    #     towers = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
-    # "heliPilot", "mortarMonkey","dartlingGunner", "wizardMonkey", "superMonkey", "ninjaMonkey", "alchemist", "druid", "spikeFactory", "engineerMonkey"]
-    #     towersLimited = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "sniperMonkey", "wizardMonkey", "ninjaMonkey",
-    #  "alchemist", "druid", "engineerMonkey"]
-    #     children[5].append(towers[random.randrange(len(towers))])
-    #     children[5][0] = towersLimited[random.randrange(len(towersLimited))]
-    #     cCoords[5].append(randomCoord())
-
-    # this is the same as the highest scoring parent, but it will be mutated to try for improvements
-        children[5] = children[4]
-        cCoords[5] = cCoords[4]
+        towers = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
+    "heliPilot", "mortarMonkey","dartlingGunner", "wizardMonkey", "superMonkey", "ninjaMonkey", "alchemist", "druid", "spikeFactory", "engineerMonkey"]
+        towersLimited = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "sniperMonkey", "wizardMonkey", "ninjaMonkey",
+     "alchemist", "druid", "engineerMonkey"]
+        children[4].append(towers[random.randrange(len(towers))])
+        children[4][0] = towersLimited[random.randrange(len(towersLimited))]
+        cCoords[4].append(randomCoord())
         x+=1
     i = 0
     while i < len(monkeys):
         children[i], cCoords[i] = mutate(children[i], cCoords[i])
         i+=1
-    children[4] = monkeys[parent1]
-    cCoords[4] = coords[parent1]
+    children[5] = monkeys[parent1]
+    cCoords[5] = coords[parent1]
+
+    i = 0
+    while i < 6:
+        cCoords[i] = verifyChild(children[i], cCoords[i])
+        i+=1
     return children, cCoords
 
 def mutate(children, cCoords):
@@ -347,117 +397,244 @@ def mutate(children, cCoords):
         i+=1
     return children, cCoords
 
+def verifyChild(monkeys, coords):   #likeliest place for bugs
+    upgradeIndexes = [] #the indexes of every upgrade we do
+    usedIndexes = [] #the indexes of every location that an upgrade points to
+    usableIndexes = [] #the indexes that are still usable
+    x = 0
+    while x < len(monkeys):
+        if len(monkeys[x]) == 3:
+            upgradeIndexes.append(x)
+        x+=1
+    x = 0
+    while x < len(coords):
+        if coords[x] not in usedIndexes:
+            usedIndexes.append(coords[x])
+        x+=1
+    x = 0
+    while x < len(monkeys):
+        if x not in usedIndexes and x not in upgradeIndexes:
+            usableIndexes.append(x)
+        x+=1
+
+    x = 0
+    while x < len(upgradeIndexes):
+        if len(monkeys[coords[upgradeIndexes[x]]]) == 3:
+            print("errors", monkeys[coords[upgradeIndexes[x]]], upgradeIndexes[x])
+            coords[upgradeIndexes[x]] = usableIndexes.pop(0)
+        x+=1
+
+    return(coords)
+
 def generateUpgradePath():
     digit1 = 0
     digit2 = 0
     digit3 = 0
-    x = random.randrange(97)
-    # if x <= 20:
-    #     digit1 = 0
-    # elif 20 < x <= 50:
-    #     digit1 = 1
-    # elif 50 < x <= 80:
-    #     digit1 = 2
-    # elif 80 < x <= 90:
-    #     digit1 = 3
-    # elif 90 < x <= 97:
-    #     digit1 = 4
-    # elif x > 97:
-    #     digit1 = 5
 
-    #evenly distributed
-    if x <= 17:
-        digit1 = 0
-    elif 17 < x <= 34:
-        digit1 = 1
-    elif 34 < x <= 51:
-        digit1 = 2
-    elif 51 < x <= 68:
-        digit1 = 3
-    elif 68 < x <= 85:
-        digit1 = 4
-    elif x > 85:
-        digit1 = 5
-    if digit1 > 2:
-        x = random.randrange(2)
-        y = random.randrange(100)
-        if x == 0:
-            if y <= 33:
-                digit2 = 0
-            elif 33 < y <= 66:
-                digit2 = 1
-            elif y > 66:
-                digit2 = 2
-            digit3 = 0
-        else:
-            digit2 = 0
-            if y <= 33:
+    rng = random.randrange(3)
+    if rng == 0:
+        x = random.randrange(100)
+        if x <= 17:
+            digit1 = 0
+        elif 17 < x <= 34:
+            digit1 = 1
+        elif 34 < x <= 51:
+            digit1 = 2
+        elif 51 < x <= 68:
+            digit1 = 3
+        elif 68 < x <= 85:
+            digit1 = 4
+        elif x > 85:
+            digit1 = 5
+
+        if digit1 > 1:
+            x = random.randrange(2)
+            y = random.randrange(100)
+            if x == 0:
+                if y <= 33:
+                    digit2 = 0
+                elif 33 < y <= 66:
+                    digit2 = 1
+                elif y > 66:
+                    digit2 = 2
                 digit3 = 0
-            elif 33 < y <= 66:
-                digit3 = 1
-            elif y > 66:
-                digit3 = 2
+            else:
+                digit2 = 0
+                if y <= 33:
+                    digit3 = 0
+                elif 33 < y <= 66:
+                    digit3 = 1
+                elif y > 66:
+                    digit3 = 2
+        else:
+            x = random.randrange(2)
+            y = random.randrange(100)
+            if x == 0:
+                if x <= 17:
+                    digit2 = 0
+                elif 17 < x <= 34:
+                    digit2 = 1
+                elif 34 < x <= 51:
+                    digit2 = 2
+                elif 51 < x <= 68:
+                    digit2 = 3
+                elif 68 < x <= 85:
+                    digit2 = 4
+                elif x > 85:
+                    digit2 = 5
+
+                digit3 = 0
+            else:
+                if x <= 17:
+                    digit3 = 0
+                elif 17 < x <= 34:
+                    digit3 = 1
+                elif 34 < x <= 51:
+                    digit3 = 2
+                elif 51 < x <= 68:
+                    digit3 = 3
+                elif 68 < x < 85:
+                    digit3 = 4
+                elif x > 85:
+                    digit3 = 5
+
+                digit2 = 0
+
+    elif rng == 2:
+        x = random.randrange(100)
+        if x <= 17:
+            digit2 = 0
+        elif 17 < x <= 34:
+            digit2 = 1
+        elif 34 < x <= 51:
+            digit2 = 2
+        elif 51 < x <= 68:
+            digit2 = 3
+        elif 68 < x <= 85:
+            digit2 = 4
+        elif x > 85:
+            digit2 = 5
+
+        if digit1 > 2:
+            x = random.randrange(2)
+            y = random.randrange(100)
+            if x == 0:
+                if y <= 33:
+                    digit3 = 0
+                elif 33 < y <= 66:
+                    digit3 = 1
+                elif y > 66:
+                    digit3 = 2
+                digit1 = 0
+            else:
+                digit3 = 0
+                if y <= 33:
+                    digit1 = 0
+                elif 33 < y <= 66:
+                    digit1 = 1
+                elif y > 66:
+                    digit1 = 2
+        else:
+            x = random.randrange(2)
+            y = random.randrange(100)
+            if x == 0:
+                if x <= 17:
+                    digit3 = 0
+                elif 17 < x <= 34:
+                    digit3 = 1
+                elif 34 < x <= 51:
+                    digit3 = 2
+                elif 51 < x <= 68:
+                    digit3 = 3
+                elif 68 < x <= 85:
+                    digit3 = 4
+                elif x > 85:
+                    digit3 = 5
+
+                digit1 = 0
+            else:
+                if x <= 17:
+                    digit1 = 0
+                elif 17 < x <= 34:
+                    digit1 = 1
+                elif 34 < x <= 51:
+                    digit1 = 2
+                elif 51 < x <= 68:
+                    digit1 = 3
+                elif 68 < x < 85:
+                    digit1 = 4
+                elif x > 85:
+                    digit1 = 5
+
+                digit3 = 0
+
     else:
-        x = random.randrange(2)
-        y = random.randrange(97)
-        if x == 0:
-            # if y <= 20:
-            #     digit2 = 0
-            # elif 20 < y <= 50:
-            #     digit2 = 1
-            # elif 50 < y <= 80:
-            #     digit2 = 2
-            # elif 80 < y <= 90:
-            #     digit2 = 3
-            # elif 90 < y <= 97:
-            #     digit2 = 4
-            # elif y > 97:
-            #     digit2 = 5
-
-            #evenly distributed
-            if x <= 17:
-                digit2 = 0
-            elif 17 < x <= 34:
-                digit2 = 1
-            elif 34 < x <= 51:
-                digit2 = 2
-            elif 51 < x <= 68:
-                digit2 = 3
-            elif 68 < x <= 85:
-                digit2 = 4
-            elif x > 85:
-                digit2 = 5
-
+        x = random.randrange(100)
+        if x <= 17:
             digit3 = 0
+        elif 17 < x <= 34:
+            digit3 = 1
+        elif 34 < x <= 51:
+            digit3 = 2
+        elif 51 < x <= 68:
+            digit3 = 3
+        elif 68 < x <= 85:
+            digit3 = 4
+        elif x > 85:
+            digit3 = 5
+
+        if digit3 > 2:
+            x = random.randrange(2)
+            y = random.randrange(100)
+            if x == 0:
+                if y <= 33:
+                    digit1 = 0
+                elif 33 < y <= 66:
+                    digit1 = 1
+                elif y > 66:
+                    digit1 = 2
+                digit2 = 0
+            else:
+                digit1 = 0
+                if y <= 33:
+                    digit2 = 0
+                elif 33 < y <= 66:
+                    digit2 = 1
+                elif y > 66:
+                    digit2 = 2
         else:
-            # if y <= 20:
-            #     digit3 = 0
-            # elif 20 < y <= 50:
-            #     digit3 = 1
-            # elif 50 < y <= 80:
-            #     digit3 = 2
-            # elif 80 < y <= 90:
-            #     digit3 = 3
-            # elif 90 < y <= 97:
-            #     digit3 = 4
-            # elif y > 97:
-            #     digit3 = 5
+            x = random.randrange(2)
+            y = random.randrange(100)
+            if x == 0:
+                if x <= 17:
+                    digit1 = 0
+                elif 17 < x <= 34:
+                    digit1 = 1
+                elif 34 < x <= 51:
+                    digit1 = 2
+                elif 51 < x <= 68:
+                    digit1 = 3
+                elif 68 < x <= 85:
+                    digit1 = 4
+                elif x > 85:
+                    digit1 = 5
 
-            #evenly distributed
-            if x <= 17:
-                digit3 = 0
-            elif 17 < x <= 34:
-                digit3 = 1
-            elif 34 < x <= 51:
-                digit3 = 2
-            elif 51 < x <= 68:
-                digit3 = 3
-            elif 68 < x < 85:
-                digit3 = 4
-            elif x > 85:
-                digit3 = 5
+                digit2 = 0
+            else:
+                if x <= 17:
+                    digit2 = 0
+                elif 17 < x <= 34:
+                    digit2 = 1
+                elif 34 < x <= 51:
+                    digit2 = 2
+                elif 51 < x <= 68:
+                    digit2 = 3
+                elif 68 < x < 85:
+                    digit2 = 4
+                elif x > 85:
+                    digit2 = 5
 
-            digit2 = 0
+                digit1 = 0
     if digit1 == 0 and digit2 == 0 and digit3 == 0:
         return generateUpgradePath()
     return str(digit1) + str(digit2) + str(digit3)
@@ -492,26 +669,21 @@ bottomBorder = 992
 #monkey arrays, this is stupid I should just make 2 2d arrays
 test1 = []
 coord1 = []
-#score1 = []
 test2 = []
 coord2 = []
-#score2 = []
 test3 = []
 coord3 = []
-#score3 = []
 test4 = []
 coord4 = []
-#score4 = []
 test5 = []
 coord5 = []
-#score5 = []
 test6 = []
 coord6 = []
-#monkeys[what set of instructions we're using][what place in the instruction set we're at]
-monkeys = [test1, test2, test3, test4, test5, test6]
-coords = [coord1, coord2, coord3, coord4, coord5, coord6]
-#score = [score1, score2, score3, score4, score5]
-score = [0, 0, 0, 0, 0, 0]
+test7 = []
+coord7 = []
+monkeys = [test1, test2, test3, test4, test5, test6, test7]
+coords = [coord1, coord2, coord3, coord4, coord5, coord6, coord7]
+score = [0, 0, 0, 0, 0, 0, 0]
 
 monkeys = randomTowers(monkeys)
 i=0
@@ -522,21 +694,23 @@ while i < instructionSize:
     coords[3].append(randomCoord())
     coords[4].append(randomCoord())
     coords[5].append(randomCoord())
+    coords[6].append(randomCoord())
     i+=1
 i = 0
 income = [650, 121, 137, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
 incomeHard = [650, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
-while i < 6:
+while i < 7:
     monkeys[i], coords[i] = addUpgrades(monkeys[i], coords[i])
     i+=1
 a = 0
-while a < 50:
-    print(monkeys[0][a], coords[0][a])
-    a+=1
 #uncomment sleep for single screen computers
 #time.sleep(5)
 
-#score = [17, 26, 34, 8, 13, 37]
+# score = [17, 26, 34, 8, 13, 37, 1]
+# monkeys, coords = createChildren(monkeys, coords, score)
+# coords[0] = verifyChild(monkeys[0], coords[0])
+# print("\n middle")
+# coords[0] = verifyChild(monkeys[0], coords[0])
 
 pyautogui.click(500,500)
 numTrials = 1
@@ -548,7 +722,7 @@ file.write("\n")
 file.close()
 while 1:
     p = 0
-    while p <= 5:
+    while p <= 6:
         print("new testing round:",p)
         print("number of trials:", numTrials)
         if difficulty == 2:
