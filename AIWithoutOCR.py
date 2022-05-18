@@ -299,10 +299,10 @@ def createChildren(monkeys, coords, score):
     children[5] = monkeys[parent1]
     cCoords[5] = coords[parent1]
 
-    # i = 0 change this back
-    # while i < 6:
-    #     cCoords[i] = verifyChild(children[i], cCoords[i])
-    #     i+=1
+    i = 0
+    while i < 6:
+        cCoords[i] = verifyChild(children[i], cCoords[i])
+        i+=1
     return children, cCoords
 
 def mutate(children, cCoords):
@@ -348,16 +348,33 @@ def verifyChild(monkeys, coords):   #likeliest place for bugs
         x+=1
 
     x = 0
-    usableIndexes.sort()
     while x < len(upgradeIndexes): #this loop fixes errors where an upgrade is placed on another upgrade instruction (or at least should)
         if len(monkeys[coords[upgradeIndexes[x]]]) == 3:
-            #print("errors", monkeys[coords[upgradeIndexes[x]]], upgradeIndexes[x])
             coords[upgradeIndexes[x]] = usableIndexes.pop(0)
         x+=1
 
-    coords = fixDuplicates(monkeys, coords) #these fix the problem of duplicates, but they make the program feel a little less like it's doing it's own thing which sucks
-    coords = fixSorting(monkeys, coords) #new problem is that some indexes are showing up too early, before the monkey at that index has been placed, to solve this, we move the indexes around so they are in numerical order
-    
+    #check for duplicates and incorrect upgrade sorting, if found, fix them
+    noDups = []
+    duplicateIndexes = []
+    x = 0
+    while x < len(coords):
+        if coords[x] not in noDups:
+            noDups.append(coords[x])
+        else:
+            duplicateIndexes.append(x)
+        x+=1
+    if len(duplicateIndexes) > 0:
+        print("duplicate error found")
+        coords = fixDuplicates(monkeys, coords)
+
+    needsSorting = False
+    while x < len(coords):
+        if isinstance(coords[x], int) and coords[x] > x:
+            needsSorting = True
+    if needsSorting:
+        print("sorting error found")
+        fixSorting(monkeys, coords)
+
     return(coords)
 
 def fixSorting(monkeys, coords):
@@ -370,11 +387,17 @@ def fixSorting(monkeys, coords):
             upgradeIndexes.append(x)
         x+=1
     
-    allTargets.sort()
     x = 0
+    print(allTargets, "\n")
     while x < len(upgradeIndexes):
-        coords[upgradeIndexes[x]] = allTargets[x]
+        y = 0
+        while y < len(allTargets):
+            if allTargets[y] < upgradeIndexes[x]:
+                coords[upgradeIndexes[x]] = allTargets.pop(y)
+                break
+            y+=1
         x+=1
+        
 
     return(coords)
 
@@ -699,11 +722,11 @@ a = 0
 
 # score = [17, 26, 34, 8, 13, 37, 1]
 # monkeys, coords = createChildren(monkeys, coords, score)
-# print(coords[0], "\n")
-# coords[0] = verifyChild(monkeys[0], coords[0])
+# print(coords[5], "\n")
+# coords[5] = verifyChild(monkeys[5], coords[5])
 # print("\n middle")
-# coords[0] = verifyChild(monkeys[0], coords[0])
-# print(coords[0])
+# coords[5] = verifyChild(monkeys[5], coords[5])
+# print(coords[5])
 
 pyautogui.click(500,500)
 numTrials = 1
@@ -724,7 +747,7 @@ while 1:
             score[p] = playGame(monkeys[p], coords[p], incomeCHIMPS)
         else:
             score[p] = playGame(monkeys[p], coords[p], income)
-        pyautogui.click(853,817)
+        pyautogui.click(982,817)
         time.sleep(.3)
         pyautogui.click(1146, 728)
         p+=1
