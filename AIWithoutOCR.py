@@ -173,10 +173,6 @@ def checkWin():
         print("win!")
         quit()
 
-def getMoneyOCR():
-    money = 0
-    return money
-
 def playGame(monkeys, coords, income):
     money = income[0]
     rounds = 0
@@ -187,7 +183,6 @@ def playGame(monkeys, coords, income):
         print(towerPrice[monkeys[0]]["baseCost"],"too expensive")
     startRound(False)
     rounds+=1
-    #can remove this once OCR is implemented?
     money = money + income[1]
 
     coordPlace = 1
@@ -196,11 +191,6 @@ def playGame(monkeys, coords, income):
         checkWin()
         if checkDeath() == True:
             return rounds
-
-        #I think we just need to do the OCR stuff once per round, first round doesn't matter since
-        #starting income is set and the functions we already have do it accurately, so we should just
-        #need to use OCR to set the money here and then we're good.
-        #money = getMoneyOCR()
 
         try:
             while money-towerPrice[monkeys[coordPlace]]["baseCost"] > 0:
@@ -221,22 +211,10 @@ def playGame(monkeys, coords, income):
                 print("upgrade failed, upgrade attempted to be placed on an upgrade instruction")
                 print(e)
                 coordPlace+=1
-                # while len(monkeys[coords[coordPlace]]) == 3:
-                #     print(monkeys[coords[coordPlace]], coords[coordPlace])
-                #     print(len(monkeys[coordPlace]))
-                #     coords[coordPlace] = coords[coordPlace]-1
-                # if money-getUpgradeCost(monkeys[coordPlace], coords[coordPlace], monkeys, coords) > 0:
-                #     print("buying upgrade")
-                #     money = money - getUpgradeCost(monkeys[coordPlace], coords[coordPlace], monkeys, coords)
-                #     buyUpgrade(monkeys[coordPlace], coords[coordPlace], coords)
-                #     coordPlace+=1
-                # else:
-                #     print("upgrade too expensive, current money is:",money)
         if checkDeath() == True:
             return rounds
         startRound(True)
         rounds+=1
-        #can remove this once OCR is implemented?
         money = money + income[rounds]
         if checkDeath() == True:
             return rounds
