@@ -4,7 +4,7 @@ import time
 from pynput.keyboard import Controller
 chanceMutation = 8 #higher number out of 10 means less likely
 chanceUpgrade = 5
-difficulty = 2 #0 = easy, 1 = normal, 2 = hard
+difficulty = 3 #0 = easy, 1 = normal, 2 = hard, 3 = CHIMPS
 if difficulty == 0:
     from towerPrice import towerPrice
 elif difficulty == 1:
@@ -299,10 +299,10 @@ def createChildren(monkeys, coords, score):
     children[5] = monkeys[parent1]
     cCoords[5] = coords[parent1]
 
-    i = 0
-    while i < 6:
-        cCoords[i] = verifyChild(children[i], cCoords[i])
-        i+=1
+    # i = 0 change this back
+    # while i < 6:
+    #     cCoords[i] = verifyChild(children[i], cCoords[i])
+    #     i+=1
     return children, cCoords
 
 def mutate(children, cCoords):
@@ -338,7 +338,7 @@ def verifyChild(monkeys, coords):   #likeliest place for bugs
         x+=1
     x = 0
     while x < len(coords):
-        if coords[x] not in usedIndexes:
+        if coords[x] not in usedIndexes and isinstance(coords[x], int):
             usedIndexes.append(coords[x])
         x+=1
     x = 0
@@ -348,13 +348,73 @@ def verifyChild(monkeys, coords):   #likeliest place for bugs
         x+=1
 
     x = 0
-    while x < len(upgradeIndexes):
+    usableIndexes.sort()
+    while x < len(upgradeIndexes): #this loop fixes errors where an upgrade is placed on another upgrade instruction (or at least should)
         if len(monkeys[coords[upgradeIndexes[x]]]) == 3:
-            print("errors", monkeys[coords[upgradeIndexes[x]]], upgradeIndexes[x])
+            #print("errors", monkeys[coords[upgradeIndexes[x]]], upgradeIndexes[x])
             coords[upgradeIndexes[x]] = usableIndexes.pop(0)
         x+=1
 
+    coords = fixDuplicates(monkeys, coords) #these fix the problem of duplicates, but they make the program feel a little less like it's doing it's own thing which sucks
+    coords = fixSorting(monkeys, coords) #new problem is that some indexes are showing up too early, before the monkey at that index has been placed, to solve this, we move the indexes around so they are in numerical order
+    
     return(coords)
+
+def fixSorting(monkeys, coords):
+    allTargets = []
+    upgradeIndexes = []
+    x = 0
+    while x < len(coords):
+        if isinstance(coords[x], int):
+            allTargets.append(coords[x])
+            upgradeIndexes.append(x)
+        x+=1
+    
+    allTargets.sort()
+    x = 0
+    while x < len(upgradeIndexes):
+        coords[upgradeIndexes[x]] = allTargets[x]
+        x+=1
+
+    return(coords)
+
+def fixDuplicates(monkeys, coords):
+    upgradeIndexes = []
+    usedIndexes = []
+    usableIndexes = []
+    duplicateIndexes = []
+    x = 0
+    while x < len(monkeys):
+        if len(monkeys[x]) == 3:
+            upgradeIndexes.append(x)
+        x+=1
+    x = 0
+    while x < len(coords):
+        if coords[x] not in usedIndexes and isinstance(coords[x], int):
+            usedIndexes.append(coords[x])
+        x+=1
+    x = 0
+    while x < len(monkeys):
+        if x not in usedIndexes and x not in upgradeIndexes:
+            usableIndexes.append(x)
+        x+=1
+
+    noDups = []
+    x = 0
+    while x < len(coords):
+        if coords[x] not in noDups:
+            noDups.append(coords[x])
+        else:
+            duplicateIndexes.append(x)
+        x+=1
+    x = 0
+    usableIndexes.sort()
+    while x < len(duplicateIndexes):
+        if isinstance(coords[duplicateIndexes[x]], int):
+            coords[duplicateIndexes[x]] = usableIndexes.pop(0)
+        x+=1
+
+    return coords
 
 def generateUpgradePath():
     digit1 = 0
@@ -629,18 +689,21 @@ while i < instructionSize:
 i = 0
 income = [650, 121, 137, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
 incomeHard = [650, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
+incomeCHIMPS = [650, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
 while i < 7:
     monkeys[i], coords[i] = addUpgrades(monkeys[i], coords[i])
     i+=1
 a = 0
-#uncomment sleep for single screen computers
+#uncomment sleep for single screen computers so you have time to tab back over
 #time.sleep(10)
 
 # score = [17, 26, 34, 8, 13, 37, 1]
 # monkeys, coords = createChildren(monkeys, coords, score)
+# print(coords[0], "\n")
 # coords[0] = verifyChild(monkeys[0], coords[0])
 # print("\n middle")
 # coords[0] = verifyChild(monkeys[0], coords[0])
+# print(coords[0])
 
 pyautogui.click(500,500)
 numTrials = 1
@@ -657,6 +720,8 @@ while 1:
         print("number of trials:", numTrials)
         if difficulty == 2:
             score[p] = playGame(monkeys[p], coords[p], incomeHard)
+        elif difficulty == 3:
+            score[p] = playGame(monkeys[p], coords[p], incomeCHIMPS)
         else:
             score[p] = playGame(monkeys[p], coords[p], income)
         pyautogui.click(853,817)
