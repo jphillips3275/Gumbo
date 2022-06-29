@@ -184,7 +184,12 @@ def checkWin():
 
 def playGame(monkeys, coords, income):
     money = income[0]
-    rounds = 0
+    if income[1] == 121:
+        rounds = 0
+    elif income[1] == 138:
+        rounds = 3
+    elif income[1] == 163:
+        rounds = 6
 
     if money - towerPrice[monkeys[0]]["baseCost"] > 0:
         money, coords[0] = buyMonkey(monkeys[0],coords[0], money)
@@ -222,8 +227,10 @@ def playGame(monkeys, coords, income):
                 coordPlace+=1
         if checkDeath() == True:
             return rounds
+        print("rounds =", rounds)
         startRound(True)
         rounds+=1
+        print("rounds =", rounds)
         money = money + income[rounds]
         if checkDeath() == True:
             return rounds
@@ -242,14 +249,43 @@ def createChildren(monkeys, coords, score):
     sortedScore.sort(reverse=True)
     parent1 = score.index(sortedScore[0])  #parent 1 and 2 should contain the indexes of the top 2 performing monkey arrays
     parent2 = score.index(sortedScore[1])
+    if parent1 == parent2:
+        x = 0
+        while x < len(score):
+            if score[x] == score[parent1] and x != int(parent1):
+                parent2 = x
+            x+=1
+
+    print("score =",score)
+    print("parent1 =",parent1)
+    print("parent2 =",parent2)
     
     global topScore
     global topMonkeySet
     global topCoordSet
+    print("comparing", sortedScore[0], "vs", topScore)
     if sortedScore[0] > topScore:
+        print("sortedScore[0] is better")
         topScore = sortedScore[0]
         topMonkeySet = copy.deepcopy(monkeys[parent1])
         topCoordSet = copy.deepcopy(coords[parent1])
+    else:
+        print("topScore is better")
+        monkeys[parent1] = copy.deepcopy(topMonkeySet)
+        coords[parent1] = copy.deepcopy(topCoordSet)
+
+    file = open("troubleshooting.txt", "a")
+    for scores in score:
+        file.write(str(scores))
+        file.write(" ")
+    file.write("\n\t")
+    tsparent1 = "parent1 = "+str(parent1)
+    tsparent2 = "parent2 = "+str(parent2)
+    file.write(tsparent1)
+    file.write(" ")
+    file.write(tsparent2)
+    file.write("\n")
+    file.close()
 
     child1 = []
     cCoord1 = []
@@ -293,12 +329,6 @@ def createChildren(monkeys, coords, score):
             children[3].append(monkeys[parent1][x])
             cCoords[3].append(coords[parent1][x])
             y+=1
-        # if y == 4:
-        #     y = 0
-        # children[5].append(monkeys[parent1][x])
-        # cCoords[5].append(coords[parent1][x])
-        # children[6].append(monkeys[parent1][x])
-        # cCoords[6].append(coords[parent1][x])
 
         towers = ["dartMonkey", "boomerangMonkey", "bombShooter", "tackShooter", "iceMonkey", "glueGunner", "sniperMonkey", "monkeyAce",
     "heliPilot", "mortarMonkey","dartlingGunner", "wizardMonkey", "superMonkey", "ninjaMonkey", "alchemist", "druid", "spikeFactory", "engineerMonkey"]
@@ -369,7 +399,10 @@ def verifyChild(monkeys, coords):   #likeliest place for bugs
     x = 0
     while x < len(upgradeIndexes): #this loop fixes errors where an upgrade is placed on another upgrade instruction (or at least should)
         if len(monkeys[coords[upgradeIndexes[x]]]) == 3:
-            coords[upgradeIndexes[x]] = usableIndexes.pop(0)
+            try:
+                coords[upgradeIndexes[x]] = usableIndexes.pop(0)
+            except:
+                pass
         x+=1
 
     #check for duplicates and incorrect upgrade sorting, if found, fix them
@@ -414,7 +447,10 @@ def fixSorting(coords):
         y = 0
         while y < len(allTargets):
             if allTargets[y] < upgradeIndexes[x]:
-                coords[upgradeIndexes[x]] = allTargets.pop(y)
+                try:
+                    coords[upgradeIndexes[x]] = allTargets.pop(y)
+                except:
+                    pass
                 break
             y+=1
         x+=1
@@ -744,7 +780,7 @@ a = 0
 #uncomment sleep for single screen computers so you have time to tab back over
 #time.sleep(10)
 
-# score = [17, 26, 34, 8, 13, 37, 1]
+# score = [17, 26, 37, 8, 13, 37, 1]
 # monkeys, coords = createChildren(monkeys, coords, score)
 # print(topScore)
 
@@ -756,6 +792,9 @@ for scores in score:
     file.write(str(scores))
     file.write(" ")
 file.write("\n")
+file.close()
+file = open("troubleshooting.txt", "w")
+file.write(" ")
 file.close()
 while 1:
     p = 0
@@ -773,7 +812,6 @@ while 1:
         pyautogui.click(1146, 728)
         p+=1
         numTrials+=1
-    print(score)
     file = open("scores.txt", "a")
     for scores in score:
         file.write(str(scores))
