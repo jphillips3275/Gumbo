@@ -4,7 +4,7 @@ import random
 import time
 from pynput.keyboard import Controller
 chanceMutation = 8 #higher number out of 10 means less likely
-chanceUpgrade = 5
+chanceUpgrade = 4
 difficulty = 3 #0 = easy, 1 = normal, 2 = hard, 3 = CHIMPS
 if difficulty == 0:
     from towerPrice import towerPrice
@@ -76,10 +76,11 @@ def checkPlaceable():
         return False
 
 def startRound(started):
-    pyautogui.click(100, 100)
-    time.sleep(.3)
-    pyautogui.click(100,100)
-    time.sleep(.3)
+    # pyautogui.click(100, 100)
+    # time.sleep(.3)
+    # pyautogui.click(100,100)
+    # time.sleep(.3)
+    # uncomment this if you're having prolems with monkey knowledge stopping the program
 
     im = pyautogui.screenshot()
     x = pyautogui.position(1810, 1024)
@@ -186,10 +187,13 @@ def playGame(monkeys, coords, income):
     money = income[0]
     if income[1] == 121:
         rounds = 0
+        dif = 1
     elif income[1] == 138:
         rounds = 3
+        dif = 2
     elif income[1] == 163:
         rounds = 6
+        dif = 3
 
     if money - towerPrice[monkeys[0]]["baseCost"] > 0:
         money, coords[0] = buyMonkey(monkeys[0],coords[0], money)
@@ -205,17 +209,19 @@ def playGame(monkeys, coords, income):
         checkWin()
         if checkDeath() == True:
             return rounds
+        print("moneys is", money)
 
         try:
             while money-towerPrice[monkeys[coordPlace]]["baseCost"] > 0:
                 money, coords[coordPlace] = buyMonkey(monkeys[coordPlace],coords[coordPlace], money)
+                print("monkey bought, remaning money is", money)
                 coordPlace+=1
             else:
                 print(monkeys[coordPlace], "too expensive, cost is:", towerPrice[monkeys[coordPlace]]["baseCost"], "money is:", money,)
         except:
             try:
                 if money-getUpgradeCost(monkeys[coordPlace], coords[coordPlace], monkeys, coords) > 0:
-                    print("buying upgrade")
+                    print("buying upgrade, money is", money)
                     money = money - getUpgradeCost(monkeys[coordPlace], coords[coordPlace], monkeys, coords)
                     buyUpgrade(monkeys[coordPlace], coords[coordPlace], coords)
                     coordPlace+=1
@@ -227,11 +233,16 @@ def playGame(monkeys, coords, income):
                 coordPlace+=1
         if checkDeath() == True:
             return rounds
-        print("rounds =", rounds)
         startRound(True)
+        print("income is", income[rounds])
+        if dif == 3:
+            money = money + income[rounds-5]
+        elif dif == 2:
+            money = money + income[rounds-2]
+        else:
+            money = money + income[rounds]
         rounds+=1
         print("rounds =", rounds)
-        money = money + income[rounds]
         if checkDeath() == True:
             return rounds
 
@@ -264,7 +275,7 @@ def createChildren(monkeys, coords, score):
     global topMonkeySet
     global topCoordSet
     print("comparing", sortedScore[0], "vs", topScore)
-    if sortedScore[0] > topScore:
+    if sortedScore[0] >= topScore:
         print("sortedScore[0] is better")
         topScore = sortedScore[0]
         topMonkeySet = copy.deepcopy(monkeys[parent1])
@@ -284,6 +295,8 @@ def createChildren(monkeys, coords, score):
     file.write(tsparent1)
     file.write(" ")
     file.write(tsparent2)
+    file.write(" topScore = ")
+    file.write(str(topScore))
     file.write("\n")
     file.close()
 
@@ -404,28 +417,6 @@ def verifyChild(monkeys, coords):   #likeliest place for bugs
             except:
                 pass
         x+=1
-
-    #check for duplicates and incorrect upgrade sorting, if found, fix them
-    # noDups = []
-    # duplicateIndexes = []
-    # x = 0
-    # while x < len(coords):
-    #     if coords[x] not in noDups:
-    #         noDups.append(coords[x])
-    #     else:
-    #         duplicateIndexes.append(x)
-    #     x+=1
-    # if len(duplicateIndexes) > 0:
-    #     print("duplicate error found")
-    #     coords = fixDuplicates(monkeys, coords)
-
-    # needsSorting = False
-    # while x < len(coords):
-    #     if isinstance(coords[x], int) and coords[x] > x:
-    #         needsSorting = True
-    # if needsSorting:
-    #     print("sorting error found")
-    #     coords = fixSorting(coords)
 
     coords = fixDuplicates(monkeys, coords)
     coords = fixSorting(coords)
@@ -772,17 +763,13 @@ while i < instructionSize:
 i = 0
 income = [650, 121, 137, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
 incomeHard = [650, 138, 175, 164, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
-incomeCHIMPS = [650, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6]
+incomeCHIMPS = [650, 163, 182, 200, 199, 314, 189, 192, 282, 259, 266, 268, 165, 358, 260, 186, 351, 298, 277, 167, 335, 333, 662, 266, 389, 337, 537, 627, 205, 912, 1150, 896, 1339, 1277, 1759, 521, 2181, 659, 1278, 1294, 2422, 716, 1637, 2843, 4758, 3016, 1091.5, 1595.5, 1595.5, 924.5, 2197.5, 2483, 1286.5, 1859, 2298, 2159, 922.5, 1232, 1386.4, 2826, 849.8, 3071.6, 1004.2, 1023.6, 777.8, 1391, 2618.8, 1503, 1504, 1392.6, 3044, 2667.4, 1316, 2540.2, 4862, 6709, 1400.2, 5366, 4757, 4749, 7044, 2625.4, 948.5, 2627.4, 3314, 2171, 339.3, 4191, 4537.4, 1946.6, 7667.1, 3718, 9955.6, 1417.2, 9653.8, 2827.9, 1534.6, 426.2, 1101.68, 2589.96, 3159, 1883.5]
 while i < 7:
     monkeys[i], coords[i] = addUpgrades(monkeys[i], coords[i])
     i+=1
 a = 0
 #uncomment sleep for single screen computers so you have time to tab back over
-#time.sleep(10)
-
-# score = [17, 26, 37, 8, 13, 37, 1]
-# monkeys, coords = createChildren(monkeys, coords, score)
-# print(topScore)
+time.sleep(10)
 
 
 pyautogui.click(500,500)
@@ -818,4 +805,5 @@ while 1:
         file.write(" ")
     file.write("\n")
     file.close()
+    topScore = topScore -1
     monkeys, coords = createChildren(monkeys, coords, score)
